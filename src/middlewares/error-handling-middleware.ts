@@ -2,44 +2,30 @@ import { NextFunction, Request, Response } from 'express';
 import httpStatus from 'http-status';
 import { ApplicationError } from '@/protocols';
 
+interface ErrorMapping {
+  [key: string]: number;
+}
+
+const errorMapping: ErrorMapping = {
+  CannotEnrollBeforeStartDateError: httpStatus.BAD_REQUEST,
+  ConflictError: httpStatus.CONFLICT,
+  DuplicatedEmailError: httpStatus.CONFLICT,
+  InvalidCredentialsError: httpStatus.UNAUTHORIZED,
+  UnauthorizedError: httpStatus.UNAUTHORIZED,
+  NotFoundError: httpStatus.NOT_FOUND,
+  InvalidCEPError: httpStatus.BAD_REQUEST,
+};
+
 export function handleApplicationErrors(
   err: ApplicationError | Error,
   _req: Request,
   res: Response,
   _next: NextFunction,
 ) {
-  if (err.name === 'CannotEnrollBeforeStartDateError') {
-    return res.status(httpStatus.BAD_REQUEST).send({
-      message: err.message,
-    });
-  }
+  const status = errorMapping[err.name];
 
-  if (err.name === 'ConflictError' || err.name === 'DuplicatedEmailError') {
-    return res.status(httpStatus.CONFLICT).send({
-      message: err.message,
-    });
-  }
-
-  if (err.name === 'InvalidCredentialsError') {
-    return res.status(httpStatus.UNAUTHORIZED).send({
-      message: err.message,
-    });
-  }
-
-  if (err.name === 'UnauthorizedError') {
-    return res.status(httpStatus.UNAUTHORIZED).send({
-      message: err.message,
-    });
-  }
-
-  if (err.name === 'NotFoundError') {
-    return res.status(httpStatus.NOT_FOUND).send({
-      message: err.message,
-    });
-  }
-
-  if (err.name === 'InvalidCEPError') {
-    return res.status(httpStatus.BAD_REQUEST).send({
+  if (status) {
+    return res.status(status).send({
       message: err.message,
     });
   }
