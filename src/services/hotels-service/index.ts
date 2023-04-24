@@ -1,35 +1,37 @@
 import { notFoundError } from '@/errors';
 import hotelRepository from '@/repositories/hotels-repository';
 
-async function findHotels(filter?: (hotel: any) => boolean) {
+async function getFilteredHotels(filter?: (hotel: any) => boolean): Promise<any[]> {
   const hotels = await hotelRepository.findAllHotels();
 
+  if (!filter) {
+    return hotels;
+  }
+
+  return hotels.filter(filter);
+}
+
+function throwIfEmpty(hotels: any[]) {
   if (hotels.length === 0) {
     throw notFoundError();
   }
-
-  if (filter) {
-    const filteredHotels = hotels.filter(filter);
-
-    if (filteredHotels.length === 0) {
-      throw notFoundError();
-    }
-
-    return filteredHotels;
-  }
-
-  return hotels;
 }
 
 export async function findAllHotels() {
-  return findHotels();
+  const hotels = await getFilteredHotels();
+  throwIfEmpty(hotels);
+  return hotels;
 }
 
 export async function findHotelById(id: number) {
-  const [hotel] = await findHotels((h) => h.id === id);
-  return hotel;
+  const filteredHotels = await getFilteredHotels((h) => h.id === id);
+  throwIfEmpty(filteredHotels);
+  return filteredHotels[0];
 }
 
-const hotelService = { findAllHotels, findHotelById };
+const hotelService = {
+  findAllHotels,
+  findHotelById,
+};
 
 export default hotelService;
