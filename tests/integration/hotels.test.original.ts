@@ -18,6 +18,7 @@ import app, { init } from '@/app';
 beforeAll(async () => {
   await init();
 });
+
 beforeEach(async () => {
   await cleanDb();
 });
@@ -49,8 +50,7 @@ describe('GET /hotels/:id', () => {
   });
 
   describe('when token is valid', () => {
-    // Teste 1: verifica se a resposta contém um objeto do hotel
-    it('should respond with status 200 and a hotel object if ticket is valid', async () => {
+    it('should respond with status 200 and an object with empty rooms array if ticket is valid', async () => {
       const user = await createUser();
       const token = await generateValidToken(user);
       const enrollment = await createEnrollmentWithAddress(user);
@@ -59,13 +59,17 @@ describe('GET /hotels/:id', () => {
       const hotel = await createHotel();
       const response = await server.get('/hotels/' + hotel.id).set('Authorization', `Bearer ${token}`);
       expect(response.status).toEqual(httpStatus.OK);
-      expect(response.body.id).toEqual(hotel.id);
-      expect(response.body.name).toEqual(hotel.name);
-      expect(response.body.image).toEqual(hotel.image);
+      expect(response.body).toEqual({
+        id: hotel.id,
+        name: hotel.name,
+        image: hotel.image,
+        createdAt: hotel.createdAt.toISOString(),
+        updatedAt: hotel.updatedAt.toISOString(),
+        Rooms: [],
+      });
     });
 
-    // Teste 2: verifica se a resposta contém um objeto do hotel com quartos
-    it('should respond with status 200 and a hotel object with rooms if ticket is valid', async () => {
+    it('should respond with status 200 and hotel with rooms if ticket is valid', async () => {
       const user = await createUser();
       const token = await generateValidToken(user);
       const enrollment = await createEnrollmentWithAddress(user);
@@ -75,19 +79,28 @@ describe('GET /hotels/:id', () => {
       const room = await createHotelRoom(hotel.id);
       const response = await server.get('/hotels/' + hotel.id).set('Authorization', `Bearer ${token}`);
       expect(response.status).toEqual(httpStatus.OK);
-      expect(response.body.id).toEqual(hotel.id);
-      expect(response.body.name).toEqual(hotel.name);
-      expect(response.body.image).toEqual(hotel.image);
-      expect(response.body.Rooms[0].id).toEqual(room.id);
-      expect(response.body.Rooms[0].name).toEqual(room.name);
-      expect(response.body.Rooms[0].capacity).toEqual(room.capacity);
+      expect(response.body).toEqual({
+        id: hotel.id,
+        name: hotel.name,
+        image: hotel.image,
+        createdAt: hotel.createdAt.toISOString(),
+        updatedAt: hotel.updatedAt.toISOString(),
+        Rooms: [
+          {
+            id: room.id,
+            name: room.name,
+            hotelId: room.hotelId,
+            capacity: room.capacity,
+            createdAt: room.createdAt.toISOString(),
+            updatedAt: room.updatedAt.toISOString(),
+          },
+        ],
+      });
     });
 
-    // Teste 3: verifica se a resposta é 404 quando o ingresso não é encontrado
-    it('should respond with status 404 if ticket not found', async () => {
+    it('should respond with status 404 if enrollment not found', async () => {
       const user = await createUser();
       const token = await generateValidToken(user);
-      await createEnrollmentWithAddress(user);
       const hotel = await createHotel();
       await createHotelRoom(hotel.id);
       const response = await server.get('/hotels/' + hotel.id).set('Authorization', `Bearer ${token}`);
@@ -140,7 +153,6 @@ describe('GET /hotels/:id', () => {
       expect(response.status).toEqual(httpStatus.PAYMENT_REQUIRED);
     });
 
-    // Teste 4: verifica se a resposta é 404 quando o hotel não é encontrado
     it('should respond with status 404 if hotel not found', async () => {
       const user = await createUser();
       const token = await generateValidToken(user);
@@ -151,7 +163,6 @@ describe('GET /hotels/:id', () => {
       expect(response.status).toEqual(httpStatus.NOT_FOUND);
     });
 
-    // Teste 5: verifica se a resposta é 400 quando o id do hotel não é um número
     it('should respond with status 400 if hotel id is not a number', async () => {
       const user = await createUser();
       const token = await generateValidToken(user);
