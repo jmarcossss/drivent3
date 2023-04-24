@@ -16,36 +16,34 @@ async function validadeRequest(req: AuthenticatedRequest) {
   }
 }
 
-export async function getHotels(req: AuthenticatedRequest, res: Response) {
-  try {
-    await validadeRequest(req);
-    const hotels = await hotelService.findAllHotels();
-    return res.status(httpStatus.OK).send(hotels);
-  } catch (error) {
-    if (error.name === 'PaymentRequiredError') {
-      return res.status(httpStatus.PAYMENT_REQUIRED).send(error.message);
-    }
-    if (error.name === 'NotFoundError') {
-      return res.status(httpStatus.NOT_FOUND).send(error.message);
-    }
-    return res.sendStatus(httpStatus.BAD_REQUEST);
-  }
+interface CustomError extends Error {
+  name: string;
+  message: string;
 }
 
-export async function getHotel(req: AuthenticatedRequest, res: Response) {
+function handleErrors(error: CustomError, res: Response) {
+  const errorMapping: Record<string, number> = {
+    PaymentRequiredError: httpStatus.PAYMENT_REQUIRED,
+    NotFoundError: httpStatus.NOT_FOUND,
+  };
+
+  const status = errorMapping[error.name] || httpStatus.BAD_REQUEST;
+  return res.status(status).send(error.message);
+}
+
+export function getHotels(req: AuthenticatedRequest, res: Response) {
+  validadeRequest(req)
+    .then(() => hotelService.findAllHotels())
+    .then((hotels) => res.status(httpStatus.OK).send(hotels))
+    .catch((error) => handleErrors(error, res));
+}
+
+export function getHotel(req: AuthenticatedRequest, res: Response) {
   const hotelId = Number(req.params.id);
   if (isNaN(hotelId)) return res.sendStatus(httpStatus.BAD_REQUEST);
-  try {
-    await validadeRequest(req);
-    const hotel = await hotelService.findHotelById(hotelId);
-    return res.status(httpStatus.OK).send(hotel);
-  } catch (error) {
-    if (error.name === 'PaymentRequiredError') {
-      return res.status(httpStatus.PAYMENT_REQUIRED).send(error.message);
-    }
-    if (error.name === 'NotFoundError') {
-      return res.status(httpStatus.NOT_FOUND).send(error.message);
-    }
-    return res.sendStatus(httpStatus.BAD_REQUEST);
-  }
+
+  validadeRequest(req)
+    .then(() => hotelService.findHotelById(hotelId))
+    .then((hotel) => res.status(httpStatus.OK).send(hotel))
+    .catch((error) => handleErrors(error, res));
 }
