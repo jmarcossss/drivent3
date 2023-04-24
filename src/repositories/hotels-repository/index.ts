@@ -1,22 +1,19 @@
 import { Hotel, Room } from '@prisma/client';
 import { prisma } from '@/config';
 
-async function findAllHotels(): Promise<Hotel[]> {
-  return prisma.hotel.findMany();
+class HotelRepository {
+  static async findAllHotels(): Promise<Hotel[]> {
+    return prisma.hotel.findMany();
+  }
+
+  static async findHotelById(id: number): Promise<Hotel & { Rooms: Room[] }> {
+    return prisma.hotel.findUnique({
+      where: { id },
+      include: {
+        Rooms: true,
+      },
+    });
+  }
 }
 
-async function findHotelById(id: number): Promise<Hotel & { Rooms: Room[] }> {
-  return prisma.hotel.findUnique({
-    where: { id },
-    include: {
-      Rooms: true,
-    },
-  });
-}
-
-const hotelRepository = {
-  findAllHotels,
-  findHotelById,
-};
-
-export default hotelRepository;
+export default HotelRepository;
