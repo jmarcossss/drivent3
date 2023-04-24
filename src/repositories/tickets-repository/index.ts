@@ -15,7 +15,7 @@ async function findTicketByEnrollmentId(enrollmentId: number) {
   });
 }
 
-async function createTicket(ticket: CreateTicketParams) {
+async function createTicket(ticket: CreateTicketParams): Promise<Ticket> {
   return prisma.ticket.create({
     data: ticket,
   });
@@ -43,7 +43,7 @@ async function findTickeWithTypeById(ticketId: number) {
   });
 }
 
-async function ticketProcessPayment(ticketId: number) {
+async function ticketProcessPayment(ticketId: number): Promise<Ticket> {
   return prisma.ticket.update({
     where: {
       id: ticketId,
